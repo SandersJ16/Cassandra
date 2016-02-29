@@ -13,7 +13,7 @@ abstract class ExpandableClass {
      * @throws ExpandableClassException
      * @return void
      */
-    public static function registerExpander(string $class) {
+    public static function registerExpander($class) {
         if (!is_subclass_of($class, 'Expander')) {
             throw new ExpandableClassException('Cannot register class ' . $class . ', must be an descendant of Expanders');
         }
@@ -43,7 +43,7 @@ abstract class ExpandableClass {
      * @param  string $class_2
      * @return void
      */
-    private static function conflictingMethods(string $class_1, string $class_2): array {
+    private static function conflictingMethods($class_1, $class_2): array {
         return array_intersect(get_class_methods($class_1), get_class_methods($class_2));
     }
 
@@ -54,7 +54,7 @@ abstract class ExpandableClass {
      * @param  string $class_2
      * @return void
      */
-    private static function conflictingProperties(string $class_1, string $class_2): array {
+    private static function conflictingProperties($class_1, $class_2): array {
         return array_intersect(array_keys(get_class_vars($class_1)), array_keys(get_class_vars($class_2)));
     }
 
@@ -240,6 +240,14 @@ abstract class ExpandableClass {
         foreach ($updated_static_properties as $updated_static_property => $updated_static_value) {
             static::$$updated_static_property = $updated_static_value;
         }
+    }
+
+    /**
+     * Return the classes currently registered to this one
+     * @return array An array of the names of the classes registered to this class.
+     */
+    public static function getRegisteredClasses() {
+        return self::$extending_classes;
     }
 }
 
