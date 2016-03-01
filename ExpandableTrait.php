@@ -7,6 +7,11 @@ trait Expandable
     private $extending_class_instances = array();
 
     private static $this_class_functions = array();
+    private static $property_exceptions = array('extending_classes',
+                                                'extending_class_instances',
+                                                'this_class_functions',
+                                                'property_exceptions',
+                                                'function_exceptions');
     private static $function_exceptions = array('__construct',
                                                 '__destruct',
                                                 '__call',
@@ -84,7 +89,7 @@ trait Expandable
             {
                 if (empty(self::$this_class_functions))
                 {
-                    self::$this_class_functions = $this->getThisClassMethods();
+                    self::$this_class_functions = $this->getThisClassMethods($extending_class_instance);
                 }
                 $extending_class_instance::addExpandableFunctions(self::$this_class_functions);
 
@@ -295,14 +300,21 @@ trait Expandable
         return self::$extending_classes;
     }
 
-    private function getThisClassMethods()
+    private function getThisClassMethods($extending_class_instance)
     {
         $class_methods = get_class_methods(static::class);
         $class_methods = array_diff($class_methods, self::$function_exceptions);
         $class_functions = array();
         foreach ($class_methods as $method_name)
         {
-            $class_functions[$method_name] = function(...$arguments) use ($method_name) {return $this->$method_name(...$arguments);};
+            $class_functions[$method_name] = function(...$arguments) use ($method_name, $extending_class_instance)
+                                             {
+                                                 $this->getLocalPropertyChangesFromExpander($extending_class_instance);
+                                                 $return_value_of_function = $this->$method_name(...$arguments);
+                                                 $this->populateLocalClassVariables();
+
+                                                 return $return_value_of_function;
+                                             };
         }
         return $class_functions;
     }

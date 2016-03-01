@@ -138,7 +138,7 @@ class ExpandableAndExpanderTraitTest extends PHPUnit_Framework_TestCase
 //        $expander_properties = get_class_vars('ExpanderClassWithPublicProperty');
 //        $public_property = 'public_static_string_property';
 //
-//        $this->assertSame($expander_properties[$public_property], ExpandableClass1::$public_property);
+//        $this->assertSame($expander_properties[$public_property], ExpandableClass1::$$public_property);
 //    }
 //
 //    /**
@@ -159,7 +159,7 @@ class ExpandableAndExpanderTraitTest extends PHPUnit_Framework_TestCase
 //    }
 
     /**
-     * Test Calling a public Expander Function from the Expandable class
+     * Test you can Call a public Expander Function from the Expandable class
      *
      * @test
      */
@@ -172,7 +172,7 @@ class ExpandableAndExpanderTraitTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * Test calling a public Expandable Class Fucntion from inside the Expander
+     * Test you can Call a public Expandable Class Function from inside the Expander
      *
      * @test
      */
@@ -185,7 +185,7 @@ class ExpandableAndExpanderTraitTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * Test calling a private Expander Method
+     * Test calling a private Expander Method throws an error
      *
      * @test
      */
@@ -201,24 +201,82 @@ class ExpandableAndExpanderTraitTest extends PHPUnit_Framework_TestCase
         catch (Error $e) {} //Test passed
     }
 
+    /**
+     * Test calling a function from the expandable class (that changes an expandable property)
+     * changes the property in the expander the class was called from
+     *
+     * @test
+     */
     public function testCallingAFunctionDefinedInTheExpandableClassThatChangesAPropertyInTheExpandableClassFromTheExpanderChangesPropertyInTheExpander()
     {
         ExpandableClassWithPropertyAndFunctionThatModifiesThatProperty::registerExpander('ExpanderClassThatCallsExpandableFunctionThatModifiesAProperty');
         $expandable_class = new ExpandableClassWithPropertyAndFunctionThatModifiesThatProperty();
 
+        $initial_value_of_varible = $expandable_class->some_integer;
         $expander_version_of_variable = $expandable_class->incrementSome_integerFromExpander();
 
-        $this->assertSame(1, $expander_version_of_variable);
-        $this->assertSame($expandable_class->some_integer, $expander_version_of_variable);
+        $this->assertSame($initial_value_of_varible + 1, $expander_version_of_variable);
+    }
+
+    /**
+     * Test calling a function from the expandable class (uses an expandable property after
+     * changing a property in the expander) uses he changed property
+     *
+     * @test
+     */
+    public function testChangingExpandablePropertyInExpanderChangesPropertyInExpandableClassWhenCallingExpandableFunctionFromExpander()
+    {
+        ExpandableClassWithPropertyAndFunctionThatModifiesThatProperty::registerExpander('ExpanderClassThatModifiesExpandablePropertyThenCallsExpandableFunctionThatModifiesAProperty');
+        $expandable_class = new ExpandableClassWithPropertyAndFunctionThatModifiesThatProperty();
+
+        $initial_value_of_varible = $expandable_class->some_integer;
+        $expander_version_of_variable = $expandable_class->incrementSome_integerInExpanderAndExpandableClass();
+
+        $this->assertSame($initial_value_of_varible + 2, $expander_version_of_variable);
     }
 }
 
+/**
+ * testRegisteringASingleExpander
+ * testRegisteringMultipleExpanders
+ * testRegisteringNonExpander
+ * testRegisteringSameExpander
+ * testRegisteringExpanderToClassDoesNotAffectOtherExpandableClasses
+ * testAccessingExpanderPublicPropertyFromExpandableClass
+ * testChangingExpanderPublicPropertyFromExpandableClass
+ * testCallingPublicFunctionDefinedInExpanderFromExpandableClass
+ * testCallingPrivateFunctionDefinedInExpander
+ */
 class ExpandableClass1 {use Expandable;}
+
+/**
+ * testRegisteringExpanderToClassDoesNotAffectOtherExpandableClasses
+ */
 class ExpandableClass2 {use Expandable;}
+
+/**
+ * testRegisteringASingleExpander
+ * testRegisteringMultipleExpanders
+ * testRegisteringSameExpander
+ * testRegisteringExpanderToClassDoesNotAffectOtherExpandableClasses
+ */
 class ExpanderClass1 {use Expander;}
+
+/**
+ * testRegisteringMultipleExpanders
+ * testRegisteringExpanderToClassDoesNotAffectOtherExpandableClasses
+ */
 class ExpanderClass2 {use Expander;}
+
+/**
+ * testRegisteringNonExpander
+ */
 class RegularClass {}
 
+/**
+ * testAccessingExpanderPublicPropertyFromExpandableClass
+ * testChangingExpanderPublicPropertyFromExpandableClass
+ */
 class ExpanderClassWithPublicProperty
 {
     use Expander;
@@ -231,6 +289,9 @@ class ExpanderClassWithPublicProperty
 //     public static $public_static_string_property = 'Public Property In Expander';
 // }
 
+/**
+ * testCallingPublicFunctionDefinedInExpanderFromExpandableClass
+ */
 class ExpanderWithPublicFunction
 {
     use Expander;
@@ -240,7 +301,9 @@ class ExpanderWithPublicFunction
     }
 }
 
-
+/**
+ * testCallingPublicFunctionDefinedInExpanderThatCallsFunctionDefinedInExpandableClass
+ */
 class ExpandableClassWithPublicFunction
 {
     use Expandable;
@@ -250,25 +313,34 @@ class ExpandableClassWithPublicFunction
     }
 }
 
+/**
+ * testCallingPublicFunctionDefinedInExpanderThatCallsFunctionDefinedInExpandableClass
+ */
 class ExpanderClassWithFunctionThatCallsExpandableClassFunction
 {
     use Expander;
     public function expanderFunctionCallingExpandableFunction()
     {
-      return $this->publicFunctionThatReturnsTrue();
+        return $this->publicFunctionThatReturnsTrue();
     }
 }
 
-
+/**
+ * testCallingPrivateFunctionDefinedInExpander
+ */
 class ExpanderClassWithPrivateFunction
 {
     use Expander;
     private function privateExpanderFunction()
     {
-      //call should never get here
+        //call should never get here
     }
 }
 
+/**
+ * testCallingAFunctionDefinedInTheExpandableClassThatChangesAPropertyInTheExpandableClassFromTheExpanderChangesPropertyInTheExpander
+ * testChangingExpandablePropertyInExpanderChangesPropertyInExpandableClassWhenCallingExpandableFunctionFromExpander
+ */
 class ExpandableClassWithPropertyAndFunctionThatModifiesThatProperty
 {
     use Expandable;
@@ -280,12 +352,29 @@ class ExpandableClassWithPropertyAndFunctionThatModifiesThatProperty
     }
 }
 
+/**
+ * testCallingAFunctionDefinedInTheExpandableClassThatChangesAPropertyInTheExpandableClassFromTheExpanderChangesPropertyInTheExpander
+ */
 class ExpanderClassThatCallsExpandableFunctionThatModifiesAProperty
 {
     use Expander;
     public function incrementSome_integerFromExpander()
     {
-      $this->incrementSome_integer();
-      return $this->some_integer;
+        $this->incrementSome_integer();
+        return $this->some_integer;
+    }
+}
+
+/**
+ * testChangingExpandablePropertyInExpanderChangesPropertyInExpandableClassWhenCallingExpandableFunctionFromExpander
+ */
+class ExpanderClassThatModifiesExpandablePropertyThenCallsExpandableFunctionThatModifiesAProperty
+{
+    use Expander;
+    public function incrementSome_integerInExpanderAndExpandableClass()
+    {
+        ++$this->some_integer;
+        $this->incrementSome_integer();
+        return $this->some_integer;
     }
 }
