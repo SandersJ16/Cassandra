@@ -116,8 +116,8 @@ trait Expandable
         self::populateStaticClassVariables();
         foreach (self::$extending_classes as $extending_class)
         {
-            //if (is_callable(array($extending_class, $method))) {
-            if (method_exists($extending_class, $method))
+            //if (method_exists($extending_class, $method))
+            if (is_callable(array($extending_class, $method)))
             {
                 $function_return_value = forward_static_call_array(array($extending_class, $method), $args);
                 self::getStaticPropertyChangesFromExpander($extending_class);

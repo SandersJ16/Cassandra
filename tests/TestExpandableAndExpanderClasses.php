@@ -107,10 +107,27 @@ class ExpandableAndExpanderTraitTest extends PHPUnit_Framework_TestCase
     }
 
     /**
+     * Test Accessing a private property of an Expandable Class defined in an Expander throws an error
+     *
+     * @test
+     */
+    public function testAccessingExpanderPrivatePropertyFromExpandableClass()
+    {
+        ExpandableClass1::registerExpander('ExpanderClassWithPrivateProperty');
+        $expandable_class = new ExpandableClass1();
+
+        try
+        {
+            $expandable_class->private_string_property;
+            $this->fail('Was able to access a private property');
+        }
+        catch (Error $error) {}
+    }
+
+    /**
      * Test changing a public property of an Expandable Class defined in an Expander
      *
      * @test
-     * @expectedError Error
      */
     public function testChangingExpanderPublicPropertyFromExpandableClass()
     {
@@ -123,6 +140,7 @@ class ExpandableAndExpanderTraitTest extends PHPUnit_Framework_TestCase
 
         $this->assertSame($new_public_property_value, $expandable_class->$public_property);
     }
+
 //    Ideally one day the below tests will work but php needs to implement __getStatic and __setStatic first
 //
 //    /**
@@ -172,19 +190,6 @@ class ExpandableAndExpanderTraitTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * Test you can Call a public Expandable Class Function from inside the Expander
-     *
-     * @test
-     */
-    public function testCallingPublicFunctionDefinedInExpanderThatCallsFunctionDefinedInExpandableClass()
-    {
-        ExpandableClassWithPublicFunction::registerExpander('ExpanderClassWithFunctionThatCallsExpandableClassFunction');
-        $expandable_class = new ExpandableClassWithPublicFunction();
-
-        $this->assertTrue($expandable_class->expanderFunctionCallingExpandableFunction());
-    }
-
-    /**
      * Test calling a private Expander Method throws an error
      *
      * @test
@@ -199,6 +204,19 @@ class ExpandableAndExpanderTraitTest extends PHPUnit_Framework_TestCase
             $this->fail('Could call a private function from expander publicly');
         }
         catch (Error $e) {} //Test passed
+    }
+
+    /**
+     * Test you can Call a public Expandable Class Function from inside the Expander
+     *
+     * @test
+     */
+    public function testCallingPublicFunctionDefinedInExpanderThatCallsFunctionDefinedInExpandableClass()
+    {
+        ExpandableClassWithPublicFunction::registerExpander('ExpanderClassWithFunctionThatCallsExpandableClassFunction');
+        $expandable_class = new ExpandableClassWithPublicFunction();
+
+        $this->assertTrue($expandable_class->expanderFunctionCallingExpandableFunction());
     }
 
     /**
@@ -234,6 +252,62 @@ class ExpandableAndExpanderTraitTest extends PHPUnit_Framework_TestCase
 
         $this->assertSame($initial_value_of_varible + 2, $expander_version_of_variable);
     }
+
+    /**
+     * Test calling a public static function defined in the Expander
+     *
+     * @test
+     */
+    public function testCallingPublicStaticExpanderFunctionFromExpandableClass()
+    {
+      ExpandableClass1::registerExpander('ExpanderClassWithPublicStaticFunction');
+      $expandable_class = new ExpandableClass1();
+
+      $this->assertTrue($expandable_class::publicStaticFunctionThatReturnsTrue());
+    }
+
+    /**
+     * Test calling a private static Expander Method throws an error
+     *
+     * @test
+     */
+    public function testCallingPrivateStaticFunctionDefinedInExpander()
+    {
+        ExpandableClass1::registerExpander('ExpanderClassWithPrivateStaticFunction');
+        $expandable_class = new ExpandableClass1();
+        try
+        {
+            $expandable_class::privateStaticExpanderFunction();
+            $this->fail('Could call a private static function from expander publicly');
+        }
+        catch (Error $e) {} //Test passed
+    }
+
+    /**
+     * Test you can Call a public static Expandable Class Function from inside the Expander
+     *
+     * @test
+     */
+    public function testCallingStaticFunctionDefinedInExpanderThatCallsPublicFunctionDefinedInExpandableClass()
+    {
+        ExpandableClassWithPublicStaticFunction::registerExpander('ExpanderClassWithStaticFunctionThatCallsExpandableClassFunction');
+        $expandable_class = new ExpandableClassWithPublicStaticFunction();
+
+        $this->assertTrue($expandable_class->expanderStaticFunctionCallingExpandableFunction());
+    }
+
+    /**
+     * Test you can Call a private static Expandable Class Function from inside the Expander
+     *
+     * @test
+     */
+    public function testCallingStaticFunctionDefinedInExpanderThatCallsPrivateFunctionDefinedInExpandableClass()
+    {
+        ExpandableClassWithPrivateStaticFunction::registerExpander('ExpanderClassWithStaticFunctionThatCallsExpandableClassFunction');
+        $expandable_class = new ExpandableClassWithPrivateStaticFunction();
+
+        $this->assertTrue($expandable_class->expanderStaticFunctionCallingExpandableFunction());
+    }
 }
 
 /**
@@ -243,9 +317,12 @@ class ExpandableAndExpanderTraitTest extends PHPUnit_Framework_TestCase
  * testRegisteringSameExpander
  * testRegisteringExpanderToClassDoesNotAffectOtherExpandableClasses
  * testAccessingExpanderPublicPropertyFromExpandableClass
+ * testAccessingExpanderPrivatePropertyFromExpandableClass
  * testChangingExpanderPublicPropertyFromExpandableClass
  * testCallingPublicFunctionDefinedInExpanderFromExpandableClass
  * testCallingPrivateFunctionDefinedInExpander
+ * testCallingPublicStaticExpanderFunctionFromExpandableClass
+ * testCallingPrivateStaticFunctionDefinedInExpander
  */
 class ExpandableClass1 {use Expandable;}
 
@@ -275,12 +352,22 @@ class RegularClass {}
 
 /**
  * testAccessingExpanderPublicPropertyFromExpandableClass
+ * testAccessingExpanderPrivatePropertyFromExpandableClass
  * testChangingExpanderPublicPropertyFromExpandableClass
  */
 class ExpanderClassWithPublicProperty
 {
     use Expander;
     public $public_string_property = 'Public Property In Expander';
+}
+
+/**
+ * testAccessingExpanderPrivatePropertyFromExpandableClass
+ */
+class ExpanderClassWithPrivateProperty
+{
+    use Expander;
+    private $private_string_property = 'Private Property In Expander';
 }
 
 // class ExpanderClassWithStaticPublicProperty
@@ -331,10 +418,7 @@ class ExpanderClassWithFunctionThatCallsExpandableClassFunction
 class ExpanderClassWithPrivateFunction
 {
     use Expander;
-    private function privateExpanderFunction()
-    {
-        //call should never get here
-    }
+    private function privateExpanderFunction() {}
 }
 
 /**
@@ -376,5 +460,63 @@ class ExpanderClassThatModifiesExpandablePropertyThenCallsExpandableFunctionThat
         ++$this->some_integer;
         $this->incrementSome_integer();
         return $this->some_integer;
+    }
+}
+
+/**
+ * testCallingPublicStaticExpanderFunctionFromExpandableClass
+ */
+class ExpanderClassWithPublicStaticFunction
+{
+    use Expander;
+    public static function publicStaticFunctionThatReturnsTrue()
+    {
+        return true;
+    }
+}
+
+/**
+ * testCallingPrivateStaticFunctionDefinedInExpander
+ */
+class ExpanderClassWithPrivateStaticFunction
+{
+    use Expander;
+    private static function privateStaticExpanderFunction() {}
+}
+
+/**
+ * testCallingStaticFunctionDefinedInExpanderThatCallsPublicFunctionDefinedInExpandableClass
+ */
+class ExpandableClassWithPublicStaticFunction
+{
+    use Expandable;
+    public static function StaticFunctionThatReturnsTrue()
+    {
+        return true;
+    }
+}
+
+/**
+ * testCallingStaticFunctionDefinedInExpanderThatCallsPrivateFunctionDefinedInExpandableClass
+ */
+class ExpandableClassWithPrivateStaticFunction
+{
+    use Expandable;
+    private static function StaticFunctionThatReturnsTrue()
+    {
+        return true;
+    }
+}
+
+/**
+ * testCallingStaticFunctionDefinedInExpanderThatCallsPublicFunctionDefinedInExpandableClass
+ * testCallingStaticFunctionDefinedInExpanderThatCallsPrivateFunctionDefinedInExpandableClass
+ */
+class ExpanderClassWithStaticFunctionThatCallsExpandableClassFunction
+{
+    use Expander;
+    public static function expanderStaticFunctionCallingExpandableFunction()
+    {
+        return self::StaticFunctionThatReturnsTrue();
     }
 }
