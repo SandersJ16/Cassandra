@@ -36,8 +36,8 @@ trait Expandable
                                                 'getLocalPropertyChangesFromExpander',
                                                 'getStaticPropertyChangesFromExpander',
                                                 'getRegisteredClasses',
-                                                'getThisClassMethods');
-
+                                                'getThisClassMethods',
+                                                'removeDefaultExpanderPropertiesFromArray');
 
     /**
      * Register an Expader to this Class, by registering a Expander to this class,
@@ -45,7 +45,7 @@ trait Expandable
      * Exception if the class you pass it is not an Expander or the Expander has conflicting
      * Properties or Methods with this class or other registered Expanders
      *
-     * @param  string $class             Class Name of the Expander you want to register
+     * @param  mixed $class             Class Name or instanc of the Expander you want to register
      * @throws ExpandableClassException
      * @return void
      */
@@ -61,12 +61,7 @@ trait Expandable
            error_log('Expander ' . $class . ' is already registered to Class ' . static::class);
         } else {
             self::$extending_classes[] = $class;
-            // if (empty(self::$extending_class_instances))
-            // {
-            //     self::$this_class_functions = self::getThisClassMethods();
-            // }
-            // $class::addExpandableFunctions(self::$this_class_functions);
-            $class::registerToExpandableClass(get_called_class());
+            //$class::registerToExpandableClass(get_called_class());
         }
     }
 
@@ -84,7 +79,6 @@ trait Expandable
         $this->primeExpanders();
         foreach ($this->extending_class_instances as $extending_class_instance)
         {
-            //if (is_callable(array($extending_class_instance, $method))) {
             if (method_exists($extending_class_instance, $method))
             {
                 if (empty(self::$this_class_functions))
@@ -116,7 +110,6 @@ trait Expandable
         self::populateStaticClassVariables();
         foreach (self::$extending_classes as $extending_class)
         {
-            //if (method_exists($extending_class, $method))
             if (is_callable(array($extending_class, $method)))
             {
                 $function_return_value = forward_static_call_array(array($extending_class, $method), $args);
@@ -154,6 +147,7 @@ trait Expandable
      * this class if it doesn't.
      *
      * @param  string $property Name of the property
+     * @param  mixed  $value    Value we want to set to a property
      * @return void
      */
     public function __set(string $property, $value)
@@ -210,8 +204,7 @@ trait Expandable
      */
     private function populateLocalClassVariables()
     {
-        $class_variables = get_object_vars($this);
-        unset($class_variables['extending_class_instances']);
+        $class_variables = self::removeDefaultExpanderPropertiesFromArray(get_object_vars($this));
         foreach ($this->extending_class_instances as $extending_class_instance)
         {
             foreach ($class_variables as $property => $value)
@@ -228,8 +221,7 @@ trait Expandable
      */
     private static function populateStaticClassVariables()
     {
-        $static_variables = self::getStaticProperties();
-        unset($static_variables['extending_classes']);
+        $static_variables = self::removeDefaultExpanderPropertiesFromArray(self::getStaticProperties());
         foreach (self::$extending_classes as $extending_class)
         {
             $extending_class::setExpandableClassVariables(get_called_class(), $static_variables);
@@ -241,7 +233,7 @@ trait Expandable
      *
      * @return array(string)
      */
-    private static function getStaticProperties(): array
+    private static function getStaticProperties() : array
     {
         $static_properties = array();
         $class = get_called_class();
@@ -253,6 +245,20 @@ trait Expandable
             }
         }
         return $static_properties;
+    }
+
+    /**
+     * Remove array elements with default expander properties as keys from array
+     * @param  array  $property_value_array  Array to remove elements from
+     * @return array                         Array with elements removed
+     */
+    private static function removeDefaultExpanderPropertiesFromArray(array $property_value_array) : array
+    {
+        foreach (self::$property_exceptions as $property_exception)
+        {
+            unset($property_value_array['extending_classes']);
+        }
+        return $property_value_array;
     }
 
     /**
@@ -300,7 +306,14 @@ trait Expandable
         return self::$extending_classes;
     }
 
-    private function getThisClassMethods($extending_class_instance)
+    /**
+     * Returns an array of method name to closures that call the properties of this class
+     * excluding the ones defined in this trait.
+     *
+     * @param  mixed $extending_class_instance  The class that we want these closures to work
+     * @return array                            An array of closures with string method name keys
+     */
+    private function getThisClassMethods($extending_class_instance) : array
     {
         $class_methods = get_class_methods(static::class);
         $class_methods = array_diff($class_methods, self::$function_exceptions);
