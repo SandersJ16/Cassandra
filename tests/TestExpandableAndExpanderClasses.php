@@ -1,6 +1,8 @@
 <?php
 include_once ('../ExpandableTrait.php');
 include_once ('../ExpanderTrait.php');
+include_once ('../ExpanderInterface.php');
+include_once ('../ExpandableInterface.php');
 
 /**
  * @backupStaticAttributes enabled
@@ -45,7 +47,7 @@ class ExpandableAndExpanderTraitTest extends PHPUnit_Framework_TestCase
      */
     public function testRegisteringNonExpander()
     {
-      ExpandableClass1::registerExpander('RegularClass');
+        ExpandableClass1::registerExpander('RegularClass');
     }
 
     /**
@@ -324,12 +326,12 @@ class ExpandableAndExpanderTraitTest extends PHPUnit_Framework_TestCase
  * testCallingPublicStaticExpanderFunctionFromExpandableClass
  * testCallingPrivateStaticFunctionDefinedInExpander
  */
-class ExpandableClass1 {use Expandable;}
+class ExpandableClass1 implements IExpandable {use Expandable;}
 
 /**
  * testRegisteringExpanderToClassDoesNotAffectOtherExpandableClasses
  */
-class ExpandableClass2 {use Expandable;}
+class ExpandableClass2 implements IExpandable {use Expandable;}
 
 /**
  * testRegisteringASingleExpander
@@ -337,13 +339,13 @@ class ExpandableClass2 {use Expandable;}
  * testRegisteringSameExpander
  * testRegisteringExpanderToClassDoesNotAffectOtherExpandableClasses
  */
-class ExpanderClass1 {use Expander;}
+class ExpanderClass1 implements IExpander {use Expander;}
 
 /**
  * testRegisteringMultipleExpanders
  * testRegisteringExpanderToClassDoesNotAffectOtherExpandableClasses
  */
-class ExpanderClass2 {use Expander;}
+class ExpanderClass2 implements IExpander {use Expander;}
 
 /**
  * testRegisteringNonExpander
@@ -355,7 +357,7 @@ class RegularClass {}
  * testAccessingExpanderPrivatePropertyFromExpandableClass
  * testChangingExpanderPublicPropertyFromExpandableClass
  */
-class ExpanderClassWithPublicProperty
+class ExpanderClassWithPublicProperty implements IExpander
 {
     use Expander;
     public $public_string_property = 'Public Property In Expander';
@@ -364,7 +366,7 @@ class ExpanderClassWithPublicProperty
 /**
  * testAccessingExpanderPrivatePropertyFromExpandableClass
  */
-class ExpanderClassWithPrivateProperty
+class ExpanderClassWithPrivateProperty implements IExpander
 {
     use Expander;
     private $private_string_property = 'Private Property In Expander';
@@ -379,7 +381,7 @@ class ExpanderClassWithPrivateProperty
 /**
  * testCallingPublicFunctionDefinedInExpanderFromExpandableClass
  */
-class ExpanderWithPublicFunction
+class ExpanderWithPublicFunction implements IExpander
 {
     use Expander;
     public function publicFunctionThatReturnsTrue()
@@ -391,7 +393,7 @@ class ExpanderWithPublicFunction
 /**
  * testCallingPublicFunctionDefinedInExpanderThatCallsFunctionDefinedInExpandableClass
  */
-class ExpandableClassWithPublicFunction
+class ExpandableClassWithPublicFunction implements IExpandable
 {
     use Expandable;
     public function publicFunctionThatReturnsTrue()
@@ -403,7 +405,7 @@ class ExpandableClassWithPublicFunction
 /**
  * testCallingPublicFunctionDefinedInExpanderThatCallsFunctionDefinedInExpandableClass
  */
-class ExpanderClassWithFunctionThatCallsExpandableClassFunction
+class ExpanderClassWithFunctionThatCallsExpandableClassFunction implements IExpander
 {
     use Expander;
     public function expanderFunctionCallingExpandableFunction()
@@ -415,7 +417,7 @@ class ExpanderClassWithFunctionThatCallsExpandableClassFunction
 /**
  * testCallingPrivateFunctionDefinedInExpander
  */
-class ExpanderClassWithPrivateFunction
+class ExpanderClassWithPrivateFunction implements IExpander
 {
     use Expander;
     private function privateExpanderFunction() {}
@@ -425,7 +427,7 @@ class ExpanderClassWithPrivateFunction
  * testCallingAFunctionDefinedInTheExpandableClassThatChangesAPropertyInTheExpandableClassFromTheExpanderChangesPropertyInTheExpander
  * testChangingExpandablePropertyInExpanderChangesPropertyInExpandableClassWhenCallingExpandableFunctionFromExpander
  */
-class ExpandableClassWithPropertyAndFunctionThatModifiesThatProperty
+class ExpandableClassWithPropertyAndFunctionThatModifiesThatProperty implements IExpandable
 {
     use Expandable;
     public $some_integer = 0;
@@ -439,7 +441,7 @@ class ExpandableClassWithPropertyAndFunctionThatModifiesThatProperty
 /**
  * testCallingAFunctionDefinedInTheExpandableClassThatChangesAPropertyInTheExpandableClassFromTheExpanderChangesPropertyInTheExpander
  */
-class ExpanderClassThatCallsExpandableFunctionThatModifiesAProperty
+class ExpanderClassThatCallsExpandableFunctionThatModifiesAProperty implements IExpander
 {
     use Expander;
     public function incrementSome_integerFromExpander()
@@ -452,7 +454,7 @@ class ExpanderClassThatCallsExpandableFunctionThatModifiesAProperty
 /**
  * testChangingExpandablePropertyInExpanderChangesPropertyInExpandableClassWhenCallingExpandableFunctionFromExpander
  */
-class ExpanderClassThatModifiesExpandablePropertyThenCallsExpandableFunctionThatModifiesAProperty
+class ExpanderClassThatModifiesExpandablePropertyThenCallsExpandableFunctionThatModifiesAProperty implements IExpander
 {
     use Expander;
     public function incrementSome_integerInExpanderAndExpandableClass()
@@ -466,7 +468,7 @@ class ExpanderClassThatModifiesExpandablePropertyThenCallsExpandableFunctionThat
 /**
  * testCallingPublicStaticExpanderFunctionFromExpandableClass
  */
-class ExpanderClassWithPublicStaticFunction
+class ExpanderClassWithPublicStaticFunction implements IExpander
 {
     use Expander;
     public static function publicStaticFunctionThatReturnsTrue()
@@ -478,7 +480,7 @@ class ExpanderClassWithPublicStaticFunction
 /**
  * testCallingPrivateStaticFunctionDefinedInExpander
  */
-class ExpanderClassWithPrivateStaticFunction
+class ExpanderClassWithPrivateStaticFunction implements IExpander
 {
     use Expander;
     private static function privateStaticExpanderFunction() {}
@@ -487,7 +489,7 @@ class ExpanderClassWithPrivateStaticFunction
 /**
  * testCallingStaticFunctionDefinedInExpanderThatCallsPublicFunctionDefinedInExpandableClass
  */
-class ExpandableClassWithPublicStaticFunction
+class ExpandableClassWithPublicStaticFunction implements IExpandable
 {
     use Expandable;
     public static function StaticFunctionThatReturnsTrue()
@@ -499,7 +501,7 @@ class ExpandableClassWithPublicStaticFunction
 /**
  * testCallingStaticFunctionDefinedInExpanderThatCallsPrivateFunctionDefinedInExpandableClass
  */
-class ExpandableClassWithPrivateStaticFunction
+class ExpandableClassWithPrivateStaticFunction implements IExpandable
 {
     use Expandable;
     private static function StaticFunctionThatReturnsTrue()
@@ -512,7 +514,7 @@ class ExpandableClassWithPrivateStaticFunction
  * testCallingStaticFunctionDefinedInExpanderThatCallsPublicFunctionDefinedInExpandableClass
  * testCallingStaticFunctionDefinedInExpanderThatCallsPrivateFunctionDefinedInExpandableClass
  */
-class ExpanderClassWithStaticFunctionThatCallsExpandableClassFunction
+class ExpanderClassWithStaticFunctionThatCallsExpandableClassFunction implements IExpander
 {
     use Expander;
     public static function expanderStaticFunctionCallingExpandableFunction()

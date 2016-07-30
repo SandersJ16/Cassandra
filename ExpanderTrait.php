@@ -55,7 +55,7 @@ trait Expander
      *
      * @param array $expandable_functions
      */
-    public static function addExpandableFunctions(array$expandable_functions)
+    public static function addExpandableFunctions(array $expandable_functions)
     {
         self::$expandable_functions = $expandable_functions;
     }
