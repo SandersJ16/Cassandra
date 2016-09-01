@@ -45,7 +45,7 @@ trait Expandable
      * Exception if the class you pass it is not an Expander or the Expander has conflicting
      * Properties or Methods with this class or other registered Expanders
      *
-     * @param  mixed $class             Class Name or instanc of the Expander you want to register
+     * @param  mixed $class             Class Name or instance of the Expander you want to register
      * @throws ExpandableClassException
      * @return void
      */
@@ -59,7 +59,9 @@ trait Expandable
         if (in_array($class, self::$extending_classes))
         {
            error_log('Expander ' . $class . ' is already registered to Class ' . static::class);
-        } else {
+        }
+        else
+        {
             self::$extending_classes[] = $class;
             //$class::registerToExpandableClass(get_called_class());
         }
