@@ -1,8 +1,8 @@
 <?php
-include 'ExpandableClass.php';
-include 'Expander.php';
+include '../frame_work/Expandable.php';
+include '../frame_work/Expander.php';
 
-class TestExpandableClass extends ExpandableClass {
+class TestExpandableClass extends Expandable {
     public $test_passing_variable_to_expander = 'Success Accessing Public Variable Defined in Expandandable Class' . PHP_EOL;
     protected $test_passing_protected_variable_to_expander = 'Success Accessing Protected Variable Defined in Expandable Class' . PHP_EOL;
 
@@ -41,7 +41,7 @@ class TestExpanderClass extends Expander {
 
     public function testChangingPrivateExpanderVariable() {
         $this->test_changing_expander_private_variable = 'Success Changing Private Variable Defined In Expander' . PHP_EOL;
-    }    
+    }
 
     public function testAccesingProtectedExpandedClassVariable() {
         print $this->test_passing_protected_variable_to_expander;
