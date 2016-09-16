@@ -1,15 +1,19 @@
 <?php
 abstract class Expandable
 {
+    private $reflection_class;
     private static $extending_classes = array();
     private $extending_class_instances = array();
 
-    private static $this_class_functions = array();
+    private $this_class_properties = array();
+    private $this_class_functions = array();
     private static $property_exceptions = array('extending_classes',
                                                 'extending_class_instances',
                                                 'this_class_functions',
+                                                'this_class_properties',
                                                 'property_exceptions',
-                                                'function_exceptions');
+                                                'function_exceptions',
+                                                'reflection_class');
     private static $function_exceptions = array('__construct',
                                                 '__destruct',
                                                 '__call',
@@ -35,7 +39,9 @@ abstract class Expandable
                                                 'getStaticPropertyChangesFromExpander',
                                                 'getRegisteredClasses',
                                                 'getThisClassMethods',
-                                                'removeDefaultExpanderPropertiesFromArray');
+                                                'removeDefaultExpanderPropertiesFromArray',
+                                                'getAllClassVariables',
+                                                'getReflectionClass');
 
     /**
      * Register an Expander to this Class. By registering a Expander to this class,
@@ -57,11 +63,11 @@ abstract class Expandable
         if (in_array($class, self::$extending_classes))
         {
            error_log('Expander ' . $class . ' is already registered to Class ' . static::class);
+           throw Exception();
         }
         else
         {
             self::$extending_classes[] = $class;
-            //$class::registerToExpandableClass(get_called_class());
         }
     }
 
@@ -81,15 +87,15 @@ abstract class Expandable
         {
             if (method_exists($extending_class_instance, $method))
             {
-                if (empty(self::$this_class_functions))
+                if (empty($this->this_class_functions))
                 {
-                    self::$this_class_functions = $this->getThisClassMethods($extending_class_instance);
+                    $this->this_class_functions = $this->getThisClassMethods($extending_class_instance);
                 }
-                $extending_class_instance::addExpandableFunctions(self::$this_class_functions);
+                $extending_class_instance::addExpandableFunctions($this->this_class_functions);
 
                 $function_return_value = call_user_func_array(array($extending_class_instance, $method), $args);
                 $this->getLocalPropertyChangesFromExpander($extending_class_instance);
-                self::getStaticPropertyChangesFromExpander(get_class($extending_class_instance));
+                //self::getStaticPropertyChangesFromExpander(get_class($extending_class_instance));
                 return $function_return_value;
             }
         }
@@ -204,7 +210,8 @@ abstract class Expandable
      */
     private function populateLocalClassVariables()
     {
-        $class_variables = self::removeDefaultExpanderPropertiesFromArray(get_object_vars($this));
+        $class_variables = $this->getAllClassVariables();
+
         foreach ($this->extending_class_instances as $extending_class_instance)
         {
             foreach ($class_variables as $property => $value)
@@ -212,6 +219,39 @@ abstract class Expandable
                 $extending_class_instance->$property = $value;
             }
         }
+    }
+
+    private function getAllClassVariables()
+    {
+        return array_merge($this->getPublicAndProtectedProperties(), $this->getPrivateProperties());
+    }
+
+    private function getPublicAndProtectedProperties()
+    {
+        return self::removeDefaultExpanderPropertiesFromArray(get_object_vars($this));
+    }
+
+    private function getPrivateProperties()
+    {
+        $private_class_variables = array();
+        $reflection_class = $this->getReflectionClass();
+        $reflection_private_properties = $reflection_class->getProperties(ReflectionProperty::IS_PRIVATE);
+
+        foreach ($reflection_private_properties as $private_property)
+        {
+            $private_property->setAccessible(true);
+            $private_class_variables[$private_property->getName()] = $private_property->getValue($this);
+        }
+        return self::removeDefaultExpanderPropertiesFromArray($private_class_variables);
+    }
+
+    private function getReflectionClass()
+    {
+        if (!isset($this->reflection_class))
+        {
+            $this->reflection_class = new ReflectionClass($this);
+        }
+        return $this->reflection_class;
     }
 
     /**
@@ -270,13 +310,23 @@ abstract class Expandable
     private function getLocalPropertyChangesFromExpander($extending_class_instance)
     {
         $changed_variables = get_object_vars($extending_class_instance);
-        $class_variables = get_object_vars($this);
+        //$class_variables = get_object_vars($this);
+        $class_variables = array_keys($this->getAllClassVariables());
 
+        //var_dump($class_variables);
         foreach ($changed_variables as $property => $value)
         {
             if (in_array($property, array_keys($class_variables)))
             {
+                if ($property == 'private_expandable_property') {
+                    print_r($value);
+                }
                 $this->$property = $value;
+            }
+            elseif (in_array($property, array_keys($this->getPrivateProperties())))
+            {
+                $reflection_class = $this->getReflectionClass();
+
             }
         }
     }
