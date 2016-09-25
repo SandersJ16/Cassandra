@@ -1,4 +1,5 @@
 <?php
+namespace Cassandra\Framework;
 
 abstract class Expander
 {
@@ -62,4 +63,4 @@ abstract class Expander
 
 }
 
-class ExpanderException extends Exception {}
+class ExpanderException extends \Exception {}

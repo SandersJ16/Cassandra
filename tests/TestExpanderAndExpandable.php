@@ -1,8 +1,9 @@
 <?php
 
-//use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\TestCase;
 
-class StackTest extends PHPUnit_Framework_TestCase
+class StackTest extends TestCase
+//class StackTest extends PHPUnit_Framework_TestCase
 {
     public function setUp()
     {
@@ -12,10 +13,19 @@ class StackTest extends PHPUnit_Framework_TestCase
     /**
      * @group framework
      */
-    public function testCallingMethodDefinedInExpander()
+    public function testCallingPublicMethodDefinedInExpander()
     {
-        $x = $this->test_expandable_class->expanderFunction('a');
-        $this->assertEquals('a', $x);
+        $function_return_value = $this->test_expandable_class->expanderFunction('a');
+        $this->assertEquals('a', $function_return_value);
+    }
+
+    /**
+     * @expectedException Error
+     * @group framework
+     */
+    public function testCallingProtectedMethodDefinedInExpander()
+    {
+        $this->test_expandable_class->protectedExpanderFunction();
     }
 
     /**
@@ -68,10 +78,18 @@ class StackTest extends PHPUnit_Framework_TestCase
         $this->test_expandable_class->ChangePrivatePropertyDefinedInExpandableClassToFalse();
         $this->assertFalse($this->test_expandable_class->getPrivateExpandableProperty());
     }
+
+    public function testCallingStaticFunctionDefinedInExpander()
+    {
+        $static_function_return_value = $this->test_expandable_class::publicStaticExpanderFunction('static');
+        $this->assertEquals('static', $static_function_return_value);
+    }
 }
 
-include '../frame_work/Expandable.php';
-include '../frame_work/Expander.php';
+//include __DIR__ . '/../src/frame_work/Expandable.php';
+//include __DIR__ . '/../src/frame_work/Expander.php';
+use Cassandra\Framework\Expandable;
+use Cassandra\Framework\Expander;
 
 class TestExpandableClass extends Expandable
 {
@@ -111,6 +129,13 @@ class TestExpanderClass extends Expander
     public function ChangePrivatePropertyDefinedInExpandableClassToFalse()
     {
         $this->private_expandable_property = false;
+    }
+
+    protected function protectedExpanderFunction() {}
+
+    public static function publicStaticExpanderFunction($string)
+    {
+        return $string;
     }
 }
 TestExpandableClass::registerExpander('TestExpanderClass');

@@ -1,4 +1,6 @@
 <?php
+namespace Cassandra\Framework;
+
 abstract class Expandable
 {
     private $reflection_class;
@@ -40,7 +42,7 @@ abstract class Expandable
                                                 'getRegisteredClasses',
                                                 'getThisClassMethods',
                                                 'removeDefaultExpanderPropertiesFromArray',
-                                                'getAllClassVariables',
+                                                'getAllClassProperties',
                                                 'getReflectionClass');
 
     /**
@@ -56,14 +58,13 @@ abstract class Expandable
     public static function registerExpander($class)
     {
         $class = is_string($class) ? $class : get_class($class);
-        if (!is_subclass_of($class, 'Expander'))
+        if (!is_subclass_of($class, '\Cassandra\Framework\Expander'))
         {
             throw new ExpandableClassException('Cannot register class ' . $class . ', must  extend Expander');
         }
         if (in_array($class, self::$extending_classes))
         {
-           error_log('Expander ' . $class . ' is already registered to Class ' . static::class);
-           throw Exception();
+           throw new ExpandableClassException('Expanders ' . $class . ' is already registered to class ' . static::class);
         }
         else
         {
@@ -210,7 +211,7 @@ abstract class Expandable
      */
     private function populateLocalClassVariables()
     {
-        $class_variables = $this->getAllClassVariables();
+        $class_variables = $this->getAllClassProperties();
 
         foreach ($this->extending_class_instances as $extending_class_instance)
         {
@@ -221,21 +222,36 @@ abstract class Expandable
         }
     }
 
-    private function getAllClassVariables()
+    /**
+     * Return all class variables that aren't part of the Expandable class and their values
+     *
+     * @return  array
+     */
+    private function getAllClassProperties() : array
     {
         return array_merge($this->getPublicAndProtectedProperties(), $this->getPrivateProperties());
     }
 
-    private function getPublicAndProtectedProperties()
+    /**
+     * Return all public and protected class variables that aren't part of the Expandable class and their values
+     *
+     * @return  array
+     */
+    private function getPublicAndProtectedProperties() : array
     {
         return self::removeDefaultExpanderPropertiesFromArray(get_object_vars($this));
     }
 
-    private function getPrivateProperties()
+    /**
+     * Return all private class variables that aren't part of the Expandable class and their values
+     *
+     * @return  array
+     */
+    private function getPrivateProperties() : array
     {
         $private_class_variables = array();
         $reflection_class = $this->getReflectionClass();
-        $reflection_private_properties = $reflection_class->getProperties(ReflectionProperty::IS_PRIVATE);
+        $reflection_private_properties = $reflection_class->getProperties(\ReflectionProperty::IS_PRIVATE);
 
         foreach ($reflection_private_properties as $private_property)
         {
@@ -245,11 +261,11 @@ abstract class Expandable
         return self::removeDefaultExpanderPropertiesFromArray($private_class_variables);
     }
 
-    private function getReflectionClass()
+    private function getReflectionClass() : \ReflectionClass
     {
         if (!isset($this->reflection_class))
         {
-            $this->reflection_class = new ReflectionClass($this);
+            $this->reflection_class = new \ReflectionClass($this);
         }
         return $this->reflection_class;
     }
@@ -296,7 +312,7 @@ abstract class Expandable
     {
         foreach (self::$property_exceptions as $property_exception)
         {
-            unset($property_value_array['extending_classes']);
+            unset($property_value_array[$property_exception]);
         }
         return $property_value_array;
     }
@@ -310,23 +326,20 @@ abstract class Expandable
     private function getLocalPropertyChangesFromExpander($extending_class_instance)
     {
         $changed_variables = get_object_vars($extending_class_instance);
-        //$class_variables = get_object_vars($this);
-        $class_variables = array_keys($this->getAllClassVariables());
+        $class_variables = $this->getPublicAndProtectedProperties();
 
-        //var_dump($class_variables);
         foreach ($changed_variables as $property => $value)
         {
             if (in_array($property, array_keys($class_variables)))
             {
-                if ($property == 'private_expandable_property') {
-                    print_r($value);
-                }
                 $this->$property = $value;
             }
             elseif (in_array($property, array_keys($this->getPrivateProperties())))
             {
                 $reflection_class = $this->getReflectionClass();
-
+                $reflection_property = $reflection_class->getProperty($property);
+                $reflection_property->setAccessible(true);
+                $reflection_property->setValue($this, $value);
             }
         }
     }
@@ -384,4 +397,4 @@ abstract class Expandable
 
 }
 
-class ExpandableClassException extends Exception {}
+class ExpandableClassException extends \Exception {}
