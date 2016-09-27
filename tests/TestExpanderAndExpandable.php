@@ -1,9 +1,11 @@
 <?php
+//namespace Cassandra\Framework\Tests;
 
+use Cassandra\Framework\Expandable;
+use Cassandra\Framework\Expander;
 use PHPUnit\Framework\TestCase;
 
 class StackTest extends TestCase
-//class StackTest extends PHPUnit_Framework_TestCase
 {
     public function setUp()
     {
@@ -79,17 +81,44 @@ class StackTest extends TestCase
         $this->assertFalse($this->test_expandable_class->getPrivateExpandableProperty());
     }
 
+    /**
+     * @group framework
+     */
     public function testCallingStaticFunctionDefinedInExpander()
     {
         $static_function_return_value = $this->test_expandable_class::publicStaticExpanderFunction('static');
         $this->assertEquals('static', $static_function_return_value);
     }
-}
 
-//include __DIR__ . '/../src/frame_work/Expandable.php';
-//include __DIR__ . '/../src/frame_work/Expander.php';
-use Cassandra\Framework\Expandable;
-use Cassandra\Framework\Expander;
+    /**
+     * @expectedException Error
+     * @group framework
+     */
+    public function testExpandingClassDoesntAddFunctionsToAllExpandableClasses()
+    {
+        $expandable_class_with_no_expanders = new TestEmptyExpandableClass();
+        $expandable_class_with_no_expanders->expanderFunction('');
+    }
+
+    /**
+     * @expectedException Error
+     * @group framework
+     */
+    public function testExpandingClassDoesntAddStaticFunctionsToAllExpandableClasses()
+    {
+        TestEmptyExpandableClass::publicStaticExpanderFunction('');
+    }
+
+    /**
+     * @expectedException Error
+     * @group framework
+     */
+    public function testExpandingClassDoesntAddvariablesToAllExpandableClasses()
+    {
+        $expandable_class_with_no_expanders = new TestEmptyExpandableClass();
+        $expandable_class_with_no_expanders->private_expander_property;
+    }
+}
 
 class TestExpandableClass extends Expandable
 {
@@ -101,6 +130,8 @@ class TestExpandableClass extends Expandable
         return $this->private_expandable_property;
     }
 }
+
+class TestEmptyExpandableClass extends Expandable {}
 
 class TestExpanderClass extends Expander
 {
