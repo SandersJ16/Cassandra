@@ -21,7 +21,9 @@ abstract class Expandable
                                                 '__call',
                                                 '__callStatic',
                                                 '__get',
+                                                '__getStatic',
                                                 '__set',
+                                                '__setStatic',
                                                 '__isset',
                                                 '__unset',
                                                 '__sleep',
@@ -43,6 +45,7 @@ abstract class Expandable
                                                 'getThisClassMethods',
                                                 'removeDefaultExpanderPropertiesFromArray',
                                                 'getAllClassProperties',
+                                                'getPublicAndProtectedProperties',
                                                 'getReflectionClass');
 
     /**
