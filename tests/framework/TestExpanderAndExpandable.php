@@ -5,7 +5,7 @@ use Cassandra\Framework\Expandable;
 use Cassandra\Framework\Expander;
 use PHPUnit\Framework\TestCase;
 
-class StackTest extends TestCase
+class TestExpanderAndExpandable extends TestCase
 {
     public function setUp()
     {
