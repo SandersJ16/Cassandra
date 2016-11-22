@@ -1,24 +1,25 @@
 <?php
 namespace Cassandra\Test;
 
-use Cassandra\Framework\Expandable;
 use Cassandra\Framework\Expander;
 use Cassandra\Framework\Combinator;
-use Cassandra\Framework\Mixin;
+use Cassandra\Framework\Mixable;
 
-class TestCombinator extends Tester
+class TestCombinator extends CassandraTestCase
 {
     public function testAddingCombinatorWorks()
     {
+        $mixin = new TestPropertyMixable()
+
         $expected_array = array('x' => array('dop_type', 'int'),
                                 'y' => array('dop_type', 'string'));
-
+        $this->assertArraysSimilar($expected_array, $mixin->properties())
     }
 }
 
 class TestPropertyCombinatorClass extends Combinator
 {
-    public static $related_interface = 'Property';
+    public static $related_interface = 'TestProperty';
 
     public function properties(array $return_value, array $other_property_functions)
     {
@@ -30,13 +31,6 @@ class TestPropertyCombinatorClass extends Combinator
     }
 }
 
-class TestPropertyMixinClass extends Mixin
-{
-    public function properties()
-    {
-        return array('x' => array('dop_type' => 'int'));
-    }
-}
 
 class TestPropertyExpanderClass extends Expander implements TestProperty
 {
@@ -51,5 +45,14 @@ interface TestProperty
     public function properties();
 }
 
-TestPropertyMixinClass::registerCombinator('TestPropertyCombinatorClass');
-TestPropertyMixinClass::registerExpander('TestPropertyExpanderClass');
+
+
+class TestPropertyMixable extends Mixable
+{
+    public function properties()
+    {
+        return array('x' => array('dop_type' => 'int'));
+    }
+}
+TestPropertyMixable::registerCombinator('TestPropertyCombinatorClass');
+TestPropertyMixable::registerExpander('TestPropertyExpanderClass');

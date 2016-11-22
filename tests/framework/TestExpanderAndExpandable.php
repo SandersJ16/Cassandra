@@ -1,11 +1,10 @@
 <?php
-//namespace Cassandra\Framework\Tests;
+namespace Cassandra\Test;
 
 use Cassandra\Framework\Expandable;
 use Cassandra\Framework\Expander;
-use PHPUnit\Framework\TestCase;
 
-class TestExpanderAndExpandable extends TestCase
+class TestExpanderAndExpandable extends CassandraTestCase
 {
     public function setUp()
     {
@@ -118,6 +117,17 @@ class TestExpanderAndExpandable extends TestCase
         $expandable_class_with_no_expanders = new TestEmptyExpandableClass();
         $expandable_class_with_no_expanders->private_expander_property;
     }
+
+    /**
+     * @group framework
+     */
+    public function testGrandchildClassesOfExpandersCanAccessParentExpandedFunctions()
+    {
+        $child_of_class_extending_expandable = new TestGrandChildOfExpandableClass();
+        $function_return_value = $child_of_class_extending_expandable->expanderFunction('a');
+        $this->assertEquals('a', $function_return_value);
+
+    }
 }
 
 class TestExpandableClass extends Expandable
@@ -132,6 +142,8 @@ class TestExpandableClass extends Expandable
 }
 
 class TestEmptyExpandableClass extends Expandable {}
+
+class TestGrandChildOfExpandableClass extends TestExpandableClass {}
 
 class TestExpanderClass extends Expander
 {
@@ -169,4 +181,4 @@ class TestExpanderClass extends Expander
         return $string;
     }
 }
-TestExpandableClass::registerExpander('TestExpanderClass');
+TestExpandableClass::registerExpander(__NAMESPACE__ . '\TestExpanderClass');

@@ -12,4 +12,5 @@ $loader->register();
 $vendor_name = 'Cassandra';
 
 $loader->addNamespace($vendor_name . '\\Framework', __DIR__ . '/../src/framework');
+$loader->addNamespace($vendor_name . '\\Test', __DIR__ . '/../tests');
 //$loader->addNamespace($vendor_name . '\\Framework\AOP', __DIR__ . '/../src/framework/aop');

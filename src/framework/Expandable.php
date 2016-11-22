@@ -45,8 +45,10 @@ abstract class Expandable
                                                 'getThisClassMethods',
                                                 'removeDefaultExpanderPropertiesFromArray',
                                                 'getAllClassProperties',
+                                                'getPrivateProperties',
                                                 'getPublicAndProtectedProperties',
-                                                'getReflectionClass');
+                                                'getReflectionClass',
+                                                'getClassAndAllExpandableParentsWithExpanders');
 
     /**
      * Register an Expander to this Class. By registering a Expander to this class,
@@ -93,10 +95,11 @@ abstract class Expandable
      */
     public function __call(string $method, array $args)
     {
-        $called_class = get_called_class();
         $this->primeExpanders();
-        if (isset($this->extending_class_instances[$called_class])) {
-            foreach ($this->extending_class_instances[$called_class] as $extending_class_instance)
+
+        if (!empty($this->extending_class_instances))
+        {
+            foreach ($this->extending_class_instances as $extending_class_instance)
             {
                 if (method_exists($extending_class_instance, $method))
                 {
@@ -153,10 +156,9 @@ abstract class Expandable
      */
     public function __get(string $property)
     {
-        $calling_class = get_called_class();
         $this->primeExpanders();
-        if (isset($this->extending_class_instances[$calling_class])) {
-            foreach ($this->extending_class_instances[$calling_class] as $extending_class_instance)
+        if (isset($this->extending_class_instances)) {
+            foreach ($this->extending_class_instances as $extending_class_instance)
             {
                 if (property_exists($extending_class_instance, $property))
                 {
@@ -180,7 +182,7 @@ abstract class Expandable
     {
         $this->primeExpanders();
         $property_class = $this;
-        foreach ($this->extending_class_instances[get_called_class()] as $extending_class_instance)
+        foreach ($this->extending_class_instances as $extending_class_instance)
         {
             if (property_exists($extending_class_instance, $property))
             {
@@ -211,20 +213,13 @@ abstract class Expandable
      */
     private function buildLocalClasses()
     {
-        $calling_class = get_called_class();
-        if (isset(self::$extending_classes[$calling_class])) {
-            if (!isset($this->extending_class_instances[$calling_class]))
+        foreach (self::getClassAndAllExpandableParentsWithExpanders() as $expandable_class)
+        {
+            foreach (self::$extending_classes[$expandable_class] as $extending_class)
             {
-                $this->extending_class_instances[$calling_class] = array();
-            }
-            if (count(array_diff(self::$extending_classes[$calling_class], array_keys($this->extending_class_instances[$calling_class]))) > 0)
-            {
-                foreach (self::$extending_classes[$calling_class] as $extending_class)
+                if (!isset($this->extending_class_instances[$extending_class]))
                 {
-                    if (!isset($this->extending_class_instances[$calling_class][$extending_class]))
-                    {
-                        $this->extending_class_instances[$calling_class][$extending_class] = new $extending_class;
-                    }
+                    $this->extending_class_instances[$extending_class] = new $extending_class;
                 }
             }
         }
@@ -238,9 +233,9 @@ abstract class Expandable
     private function populateLocalClassVariables()
     {
         $class_variables = $this->getAllClassProperties();
-        $calling_class = get_called_class();
-        if (isset($this->extending_class_instances[$calling_class])) {
-            foreach ($this->extending_class_instances[$calling_class] as $extending_class_instance)
+        if (isset($this->extending_class_instances))
+        {
+            foreach ($this->extending_class_instances as $extending_class_instance)
             {
                 foreach ($class_variables as $property => $value)
                 {
@@ -289,6 +284,10 @@ abstract class Expandable
         return self::removeDefaultExpanderPropertiesFromArray($private_class_variables);
     }
 
+    /**
+     * Return the reflection class for this object,
+     * function insures only one instance of the reflection class exists
+     */
     private function getReflectionClass() : \ReflectionClass
     {
         if (!isset($this->reflection_class))
@@ -392,13 +391,33 @@ abstract class Expandable
     }
 
     /**
-     * Return the classes currently registered to this one
+     * Return the classes currently registered to this one and it's parents
      *
      * @return array An array of the names of the classes registered to this class.
      */
     public static function getRegisteredClasses()
     {
         return self::$extending_classes[get_called_class()];
+    }
+
+    /**
+     * Returns a list of all the calling classes parents that have expanders,
+     * the name of the calling class will be in the list two if it has any expanders
+     *
+     * @return array
+     */
+    protected static function getClassAndAllExpandableParentsWithExpanders() : array
+    {
+        $called_class = get_called_class();
+        $class_and_expandable_parents_with_expanders = array();
+
+        foreach (self::$extending_classes as $class_name => $x)
+        {
+            if (is_a($called_class, $class_name, true)) {
+                $class_and_expandable_parents_with_expanders[] = $class_name;
+            }
+        }
+        return $class_and_expandable_parents_with_expanders;
     }
 
     /**
@@ -426,7 +445,6 @@ abstract class Expandable
         }
         return $class_functions;
     }
-
 }
 
 class ExpandableClassException extends \Exception {}
