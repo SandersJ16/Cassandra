@@ -1,5 +1,6 @@
 {
     "require": {
-        "phpunit/phpunit": "^5.5"
+        "phpunit/phpunit": "^5.5",
+        "goaop/framework": "^2.0"
     }
 }

@@ -1,9 +1,10 @@
 <?php
+namespace Cassandra\Test;
 
-use PHPUnit\Framework\TestCase;
+use Cassandra\Framework\Expandable;
+use Cassandra\Framework\Expander;
 
-class StackTest extends TestCase
-//class StackTest extends PHPUnit_Framework_TestCase
+class TestExpanderAndExpandable extends CassandraTestCase
 {
     public function setUp()
     {
@@ -79,17 +80,55 @@ class StackTest extends TestCase
         $this->assertFalse($this->test_expandable_class->getPrivateExpandableProperty());
     }
 
+    /**
+     * @group framework
+     */
     public function testCallingStaticFunctionDefinedInExpander()
     {
         $static_function_return_value = $this->test_expandable_class::publicStaticExpanderFunction('static');
         $this->assertEquals('static', $static_function_return_value);
     }
-}
 
-//include __DIR__ . '/../src/frame_work/Expandable.php';
-//include __DIR__ . '/../src/frame_work/Expander.php';
-use Cassandra\Framework\Expandable;
-use Cassandra\Framework\Expander;
+    /**
+     * @expectedException Error
+     * @group framework
+     */
+    public function testExpandingClassDoesntAddFunctionsToAllExpandableClasses()
+    {
+        $expandable_class_with_no_expanders = new TestEmptyExpandableClass();
+        $expandable_class_with_no_expanders->expanderFunction('');
+    }
+
+    /**
+     * @expectedException Error
+     * @group framework
+     */
+    public function testExpandingClassDoesntAddStaticFunctionsToAllExpandableClasses()
+    {
+        TestEmptyExpandableClass::publicStaticExpanderFunction('');
+    }
+
+    /**
+     * @expectedException Error
+     * @group framework
+     */
+    public function testExpandingClassDoesntAddvariablesToAllExpandableClasses()
+    {
+        $expandable_class_with_no_expanders = new TestEmptyExpandableClass();
+        $expandable_class_with_no_expanders->private_expander_property;
+    }
+
+    /**
+     * @group framework
+     */
+    public function testGrandchildClassesOfExpandersCanAccessParentExpandedFunctions()
+    {
+        $child_of_class_extending_expandable = new TestGrandChildOfExpandableClass();
+        $function_return_value = $child_of_class_extending_expandable->expanderFunction('a');
+        $this->assertEquals('a', $function_return_value);
+
+    }
+}
 
 class TestExpandableClass extends Expandable
 {
@@ -101,6 +140,10 @@ class TestExpandableClass extends Expandable
         return $this->private_expandable_property;
     }
 }
+
+class TestEmptyExpandableClass extends Expandable {}
+
+class TestGrandChildOfExpandableClass extends TestExpandableClass {}
 
 class TestExpanderClass extends Expander
 {
@@ -138,4 +181,4 @@ class TestExpanderClass extends Expander
         return $string;
     }
 }
-TestExpandableClass::registerExpander('TestExpanderClass');
+TestExpandableClass::registerExpander(__NAMESPACE__ . '\TestExpanderClass');
