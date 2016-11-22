@@ -1,16 +1,21 @@
 <?php
 namespace Cassandra\Framework;
 
-class Mixin extends Expandable
+class Mixable extends Expandable
 {
     /**
      * array(Class_Name => array(Interface_Name => array(Combinator_Class_Name)))
      */
-    private static $related_combinators = array();
+    private static $combinators = array();
 
-    public static function registerCombinator(Combinator $combinator)
+    public static function registerCombinator($combinator_class)
     {
-        $related_interface = $combinator->getInterfaceName();
+        $combinator_class = is_string($combinator_class) ? $combinator_class : get_class($combinator_class);
+        if (!is_subclass_of($combinator_class, '\Cassandra\Framework\Combinator'))
+        {
+            throw new ExpandableClassException('Cannot register class ' . $combinator_class . ', must  extend Combinator');
+        }
+
 
         $calling_class = get_called_class();
 
@@ -24,10 +29,5 @@ class Mixin extends Expandable
             self::$related_combinators[$calling_class][$related_interface] = array();
         }
         self::$related_combinators[$calling_class][$related_interface][] = $combinator;
-    }
-
-    private static function x()
-    {
-
     }
 }
