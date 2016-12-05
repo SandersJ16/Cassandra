@@ -85,7 +85,7 @@ class TestExpanderAndExpandable extends CassandraTestCase
      */
     public function testCallingPublicFunctionDefinedInExpandableClassFromExpander()
     {
-        $this->test_expandable_class->callPublicExpanderFunction();
+        $this->assertSame('hello', $this->test_expandable_class->callPublicExpanderFunction());
     }
 
     /**
@@ -93,7 +93,7 @@ class TestExpanderAndExpandable extends CassandraTestCase
      */
     public function testCallingPrivateFunctionDefinedInExpandableClassFromExpander()
     {
-        $this->test_expandable_class->callPrivateExpanderFunction();
+        $this->assertSame('hello', $this->test_expandable_class->callPrivateExpanderFunction());
     }
 
     /**
