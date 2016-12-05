@@ -9,13 +9,6 @@ abstract class Expandable
 
     private $this_class_properties = array();
     private $this_class_functions = array();
-    private static $property_exceptions = array('extending_classes',
-                                                'extending_class_instances',
-                                                'this_class_functions',
-                                                'this_class_properties',
-                                                'property_exceptions',
-                                                'function_exceptions',
-                                                'reflection_class');
     private static $function_exceptions = array('__construct',
                                                 '__destruct',
                                                 '__call',
@@ -42,8 +35,7 @@ abstract class Expandable
                                                 'getLocalPropertyChangesFromExpander',
                                                 'getStaticPropertyChangesFromExpander',
                                                 'getRegisteredClasses',
-                                                'getThisClassMethods',
-                                                'removeDefaultExpanderPropertiesFromArray',
+                                                'getThisClassPublicAndProtectedMethods',
                                                 'getAllClassProperties',
                                                 'getPrivateProperties',
                                                 'getPublicAndProtectedProperties',
@@ -262,7 +254,7 @@ abstract class Expandable
      */
     private function getPublicAndProtectedProperties() : array
     {
-        return self::removeDefaultExpanderPropertiesFromArray(get_object_vars($this));
+        return get_object_vars($this);
     }
 
     /**
@@ -274,14 +266,20 @@ abstract class Expandable
     {
         $private_class_variables = array();
         $reflection_class = $this->getReflectionClass();
-        $reflection_private_properties = $reflection_class->getProperties(\ReflectionProperty::IS_PRIVATE);
 
-        foreach ($reflection_private_properties as $private_property)
-        {
-            $private_property->setAccessible(true);
-            $private_class_variables[$private_property->getName()] = $private_property->getValue($this);
-        }
-        return self::removeDefaultExpanderPropertiesFromArray($private_class_variables);
+        do {
+            $reflection_private_properties = $reflection_class->getProperties(\ReflectionProperty::IS_PRIVATE);
+
+            foreach ($reflection_private_properties as $private_property)
+            {
+                if (!isset($private_class_variables[$private_property->getName()])) {
+                    $private_property->setAccessible(true);
+                    $private_class_variables[$private_property->getName()] = $private_property->getValue($this);
+                }
+            }
+            $reflection_class = $reflection_class->getParentClass();
+        } while ($reflection_class && $reflection_class->getName() != __CLASS__);
+        return $private_class_variables;
     }
 
     /**
@@ -304,7 +302,7 @@ abstract class Expandable
      */
     private static function populateStaticClassVariables()
     {
-        $static_variables = self::removeDefaultExpanderPropertiesFromArray(self::getStaticProperties());
+        $static_variables = self::getStaticProperties();
         $called_class = get_called_class();
         if (isset(self::$extending_classes[$called_class]))
         {
@@ -335,20 +333,6 @@ abstract class Expandable
     }
 
     /**
-     * Remove array elements with default expander properties as keys from array
-     * @param  array  $property_value_array  Array to remove elements from
-     * @return array                         Array with elements removed
-     */
-    private static function removeDefaultExpanderPropertiesFromArray(array $property_value_array) : array
-    {
-        foreach (self::$property_exceptions as $property_exception)
-        {
-            unset($property_value_array[$property_exception]);
-        }
-        return $property_value_array;
-    }
-
-    /**
      * Get the properties from an Expander that correspond with this classes properties and update this classes properties with the values from the expander
      *
      * @param  mixed $extending_class_instance
@@ -368,6 +352,10 @@ abstract class Expandable
             elseif (in_array($property, array_keys($this->getPrivateProperties())))
             {
                 $reflection_class = $this->getReflectionClass();
+                while (!$reflection_class->hasProperty($property))
+                {
+                    $reflection_class = $reflection_class->getParentClass();
+                }
                 $reflection_property = $reflection_class->getProperty($property);
                 $reflection_property->setAccessible(true);
                 $reflection_property->setValue($this, $value);
@@ -402,7 +390,7 @@ abstract class Expandable
 
     /**
      * Returns a list of all the calling classes parents that have expanders,
-     * the name of the calling class will be in the list two if it has any expanders
+     * the name of the calling class will be in the list too if it has any expanders
      *
      * @return array
      */
@@ -421,13 +409,13 @@ abstract class Expandable
     }
 
     /**
-     * Returns an array of method name to closures that call the properties of this class
-     * excluding the ones defined in this trait.
+     * Returns an array of public and protected method names to closures that call the properties of this class
+     * excluding the ones defined in this base class.
      *
      * @param  mixed $extending_class_instance  The class that we want these closures to work
      * @return array                            An array of closures with string method name keys
      */
-    private function getThisClassMethods($extending_class_instance) : array
+    private function getThisClassPublicAndProtectedMethods($extending_class_instance) : array
     {
         $class_methods = get_class_methods(static::class);
         $class_methods = array_diff($class_methods, self::$function_exceptions);
@@ -444,6 +432,51 @@ abstract class Expandable
                                              };
         }
         return $class_functions;
+    }
+
+    /**
+     * Returns an array of private method names to closures that call the properties of this class
+     * excluding the ones defined in this base class.
+     *
+     * @param  mixed $extending_class_instance  The class that we want these closures to work
+     * @return array                            An array of closures with string method name keys
+     */
+    private function getThisClassPrivateMethods($extending_class_instance) : array
+    {
+        $private_class_functions = array();
+        $reflection_class = $this->getReflectionClass();
+
+        do {
+            $reflection_private_methods = $reflection_class->getMethods(\ReflectionMethod::IS_PRIVATE);
+
+            foreach ($reflection_private_methods as $private_method)
+            {
+                if (!isset($private_class_functions[$private_method->getName()])) {
+                    $private_method->setAccessible(true);
+                    $private_class_functions[$private_method->getName()] = function (...$arguments) use ($private_method, $extending_class_instance)
+                                                                           {
+                                                                               $this->getLocalPropertyChangesFromExpander($extending_class_instance);
+                                                                               $return_value_of_function = $private_method->invokeArgs($this, $arguments);
+                                                                               $this->populateLocalClassVariables();
+                                                                               return $return_value_of_function;
+                                                                           };
+                }
+            }
+            $reflection_class = $reflection_class->getParentClass();
+        } while ($reflection_class && $reflection_class->getName() != __CLASS__);
+        return $private_class_functions;
+    }
+
+    /**
+     * Returns an array of method names to closures that call the properties of this class
+     * excluding the ones defined in this base class.
+     *
+     * @param  mixed $extending_class_instance  The class that we want these closures to work
+     * @return array                            An array of closures with string method name keys
+     */
+    private function getThisClassMethods($extending_class_instance) : array
+    {
+        return array_merge($this->getThisClassPublicAndProtectedMethods($extending_class_instance), $this->getThisClassPrivateMethods($extending_class_instance));
     }
 }
 

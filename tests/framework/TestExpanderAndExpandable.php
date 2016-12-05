@@ -83,6 +83,22 @@ class TestExpanderAndExpandable extends CassandraTestCase
     /**
      * @group framework
      */
+    public function testCallingPublicFunctionDefinedInExpandableClassFromExpander()
+    {
+        $this->test_expandable_class->callPublicExpanderFunction();
+    }
+
+    /**
+     * @group framework
+     */
+    public function testCallingPrivateFunctionDefinedInExpandableClassFromExpander()
+    {
+        $this->test_expandable_class->callPrivateExpanderFunction();
+    }
+
+    /**
+     * @group framework
+     */
     public function testCallingStaticFunctionDefinedInExpander()
     {
         $static_function_return_value = $this->test_expandable_class::publicStaticExpanderFunction('static');
@@ -121,12 +137,29 @@ class TestExpanderAndExpandable extends CassandraTestCase
     /**
      * @group framework
      */
-    public function testGrandchildClassesOfExpandersCanAccessParentExpandedFunctions()
+    public function testGrandChildClassOfExpanderCanAccessParentExpandedPublicFunctions()
     {
         $child_of_class_extending_expandable = new TestGrandChildOfExpandableClass();
         $function_return_value = $child_of_class_extending_expandable->expanderFunction('a');
         $this->assertEquals('a', $function_return_value);
+    }
 
+    /**
+     * @group framework
+     */
+    public function testGrandChildClassOfExpanderCanAccessParentPublicVariablesDefinedInExpander()
+    {
+        $child_of_class_extending_expandable = new TestGrandChildOfExpandableClass();
+        $this->assertTrue($child_of_class_extending_expandable->public_expander_property);
+    }
+
+    /**
+     * @group framework
+     */
+    public function testGrandChildClassOfExpanderCanAccessParentPrivateVariableDefinedInExpandableClassFromExpander()
+    {
+        $child_of_class_extending_expandable = new TestGrandChildOfExpandableClass();
+        $this->assertTrue($child_of_class_extending_expandable->returnPrivatePropertyDefinedInExpandableClass());
     }
 }
 
@@ -138,6 +171,16 @@ class TestExpandableClass extends Expandable
     public function getPrivateExpandableProperty()
     {
         return $this->private_expandable_property;
+    }
+
+    private function privateFunctionReturnHello()
+    {
+        return "hello";
+    }
+
+    public function publicFunctionReturnHello()
+    {
+        return "hello";
     }
 }
 
@@ -179,6 +222,16 @@ class TestExpanderClass extends Expander
     public static function publicStaticExpanderFunction($string)
     {
         return $string;
+    }
+
+    public function callPublicExpanderFunction()
+    {
+        return $this->publicFunctionReturnHello();
+    }
+
+    public function callPrivateExpanderFunction()
+    {
+        return $this->privateFunctionReturnHello();
     }
 }
 TestExpandableClass::registerExpander(__NAMESPACE__ . '\TestExpanderClass');
