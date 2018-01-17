@@ -9,40 +9,6 @@ abstract class Expandable
 
     private $this_class_properties = array();
     private $this_class_functions = array();
-    private static $function_exceptions = array('__construct',
-                                                '__destruct',
-                                                '__call',
-                                                '__callStatic',
-                                                '__get',
-                                                '__getStatic',
-                                                '__set',
-                                                '__setStatic',
-                                                '__isset',
-                                                '__unset',
-                                                '__sleep',
-                                                '__wakeup',
-                                                '__toString',
-                                                '__invoke',
-                                                '__set_state',
-                                                '__clone',
-                                                '__debugInfo',
-                                                'registerExpander',
-                                                'primeExpanders',
-                                                'buildLocalClasses',
-                                                'populateLocalClassVariables',
-                                                'populateStaticClassVariables',
-                                                'getStaticProperties',
-                                                'getLocalPropertyChangesFromExpander',
-                                                'getStaticPropertyChangesFromExpander',
-                                                'getRegisteredClasses',
-                                                'getThisClassMethods',
-                                                'getThisClassPublicAndProtectedMethods',
-                                                'getThisClassPrivateMethods',
-                                                'getAllClassProperties',
-                                                'getPrivateProperties',
-                                                'getPublicAndProtectedProperties',
-                                                'getReflectionClass',
-                                                'getClassAndAllExpandableParentsWithExpanders');
 
     /**
      * Register an Expander to this Class. By registering a Expander to this class,
@@ -420,7 +386,7 @@ abstract class Expandable
     private function getThisClassPublicAndProtectedMethods($extending_class_instance) : array
     {
         $class_methods = get_class_methods(static::class);
-        $class_methods = array_diff($class_methods, self::$function_exceptions);
+        $class_methods = array_diff($class_methods, static::functionExclusions());
         $class_functions = array();
         foreach ($class_methods as $method_name)
         {
@@ -479,6 +445,45 @@ abstract class Expandable
     private function getThisClassMethods($extending_class_instance) : array
     {
         return array_merge($this->getThisClassPublicAndProtectedMethods($extending_class_instance), $this->getThisClassPrivateMethods($extending_class_instance));
+    }
+
+    protected static function functionExclusions()
+    {
+        return array('__construct',
+                     '__destruct',
+                     '__call',
+                     '__callStatic',
+                     '__get',
+                     '__getStatic',
+                     '__set',
+                     '__setStatic',
+                     '__isset',
+                     '__unset',
+                     '__sleep',
+                     '__wakeup',
+                     '__toString',
+                     '__invoke',
+                     '__set_state',
+                     '__clone',
+                     '__debugInfo',
+                     'registerExpander',
+                     'primeExpanders',
+                     'buildLocalClasses',
+                     'populateLocalClassVariables',
+                     'populateStaticClassVariables',
+                     'getStaticProperties',
+                     'getLocalPropertyChangesFromExpander',
+                     'getStaticPropertyChangesFromExpander',
+                     'getRegisteredClasses',
+                     'getThisClassMethods',
+                     'getThisClassPublicAndProtectedMethods',
+                     'getThisClassPrivateMethods',
+                     'getAllClassProperties',
+                     'getPrivateProperties',
+                     'getPublicAndProtectedProperties',
+                     'getReflectionClass',
+                     'getClassAndAllExpandableParentsWithExpanders',
+                     'functionExclusions');
     }
 }
 

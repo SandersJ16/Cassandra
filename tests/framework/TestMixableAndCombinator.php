@@ -7,9 +7,17 @@ use Cassandra\Framework\Mixable;
 
 class TestCombinator extends CassandraTestCase
 {
-    public function testAddingCombinatorWorks()
+
+    public function testAddingCombinatorToMixable()
     {
-        $mixin = new TestPropertyMixable();
+        $mixable = new TestMixableWithNoPropertyFunction();
+        $expected_array = array('y' => array('dop_type' => 'string'));
+        $this->assertEquals($expected_array, $mixable->properties());
+    }
+
+    public function testAddingCombinatorToMixableWithCombinatorFunction()
+    {
+        $mixin = new TestMixableWithPropertyFunction();
 
         $expected_array = array('x' => array('dop_type', 'int'),
                                 'y' => array('dop_type', 'string'));
@@ -19,10 +27,17 @@ class TestCombinator extends CassandraTestCase
 
 class TestPropertyCombinatorClass extends Combinator
 {
-    public static $related_interface = 'TestProperty';
-
-    public function properties(array $return_value, array $other_property_functions)
+    public static function relatedInterface() : string
     {
+        return __NAMESPACE__ . '\TestCombinatorInterface';
+    }
+
+    public function properties(array $return_value = null, array $other_property_functions)
+    {
+        if ($return_value === null)
+        {
+            $return_value = array();
+        }
         foreach ($other_property_functions as $property_function)
         {
             $return_value = array_merge($return_value, $property_function());
@@ -32,27 +47,33 @@ class TestPropertyCombinatorClass extends Combinator
 }
 
 
-class TestPropertyExpanderClass extends Expander implements TestProperty
+class TestPropertyExpanderClass extends Expander implements TestCombinatorInterface
 {
-    public function properties()
+    public function properties() : array
     {
         return array('y' => array('dop_type' => 'string'));
     }
 }
 
-interface TestProperty
+interface TestCombinatorInterface
 {
-    public function properties();
+    public function properties() : array;
 }
 
 
+class TestMixableWithNoPropertyFunction extends Mixable {}
 
-class TestPropertyMixable extends Mixable
+TestMixableWithNoPropertyFunction::registerCombinator(__NAMESPACE__ . '\TestPropertyCombinatorClass');
+TestMixableWithNoPropertyFunction::registerExpander(__NAMESPACE__ . '\TestPropertyExpanderClass');
+
+
+class TestMixableWithPropertyFunction extends Mixable implements TestCombinatorInterface
 {
-    public function properties()
+    public function properties() : array
     {
         return array('x' => array('dop_type' => 'int'));
     }
 }
-TestPropertyMixable::registerCombinator('TestPropertyCombinatorClass');
-TestPropertyMixable::registerExpander('TestPropertyExpanderClass');
+
+TestMixableWithPropertyFunction::registerCombinator(__NAMESPACE__ . '\TestPropertyCombinatorClass');
+TestMixableWithPropertyFunction::registerExpander(__NAMESPACE__ . '\TestPropertyExpanderClass');
