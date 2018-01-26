@@ -98,9 +98,10 @@ abstract class Mixable
      * @param  array  $args   Arguments passed to method
      * @return mixed          Return value of method
      */
-    public function __callCombinator($method, $args)
+    public function __callCombinator(string $method, array $args)
     {
-        $related_functions = $this->getCombinatorFunctionsForMethod($method);
+        $combinator = $this->getCombinatorForMethod($method);
+        $related_functions = $this->getCombinatorFunctions($combinator, $method);
 
         if (!empty($related_functions))
         {
@@ -115,30 +116,48 @@ abstract class Mixable
 
     }
 
-    //
-    public function getCombinatorFunctionsForMethod($method) {
-        $related_functions = array();
+    /**
+     * Get the first Combinator set on this class that defines a combinator for $method
+     *
+     * @param  string $method   Method name we want to check the combinator for
+     * @return Combinator|null  First registered combinator set for method or null if none found
+     */
+    public function getCombinatorForMethod(string $method) {
+        $method_combinator = null;
         $combinators = self::getCombinatorsForClass($this);
-        if (!empty($combinators) && !empty($this->extending_class_instances))
+        if (!empty($combinators))
         {
             foreach ($combinators as $combinator)
             {
                 if (method_exists($combinator::relatedInterface(), $method))
                 {
-                    foreach ($this->extending_class_instances as $extending_class_instance)
-                    {
-                        if (class_implements($extending_class_instance, $combinator::relatedInterface()))
-                        {
-                            $extending_class_name = get_class($extending_class_instance);
-                            $reflection = new \ReflectionClass($extending_class_name);
-                            $closure = $reflection->getMethod($method)
-                                                  ->getClosure($extending_class_instance)
-                                                  ->bindTo($this);
-                            $related_functions[$extending_class_name] = $closure;
-                        }
-                    }
+                    $method_combinator = $combinator;
                     break;
                 }
+            }
+        }
+        return $method_combinator;
+    }
+
+    /**
+     * Get all the current functions from registered Expanders that have a method used in $combinator
+     *
+     * @param  Combinator $combinator The Combinator we are checking methods for
+     * @param  string     $method     Method name we are looking for in Combinator
+     * @return array                  Array of closures of combinator functions from Expanders
+     */
+    public function getCombinatorFunctions(Combinator $combinator, string $method) {
+        $related_functions = array();
+        foreach ($this->extending_class_instances as $extending_class_instance)
+        {
+            if (class_implements($extending_class_instance, $combinator::relatedInterface()))
+            {
+                $extending_class_name = get_class($extending_class_instance);
+                $reflection = new \ReflectionClass($extending_class_name);
+                $closure = $reflection->getMethod($method)
+                                      ->getClosure($extending_class_instance)
+                                      ->bindTo($this);
+                $related_functions[$extending_class_name] = $closure;
             }
         }
         return $related_functions;
