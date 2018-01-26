@@ -1,11 +1,12 @@
 <?php
+namespace Cassandra\Framework;
 
-namespace Cassandra\Framework\AOP;
-
-use Go\Core\AspectKernel;
 use Go\Core\AspectContainer;
-
-class Kernel extends AspectKernel
+use Cassandra\Aspect\CombinatorAspect;
+/**
+ * Application Aspect Kernel
+ */
+class AspectKernel extends Go\Core\AspectKernel
 {
     /**
      * Configure an AspectContainer with advisors, aspects and pointcuts
@@ -16,5 +17,6 @@ class Kernel extends AspectKernel
      */
     protected function configureAop(AspectContainer $container)
     {
+        $container->registerAspect(new CombinatorAspect());
     }
 }

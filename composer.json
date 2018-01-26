@@ -2,5 +2,13 @@
     "require": {
         "phpunit/phpunit": "^5.5",
         "goaop/framework": "^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Cassandra\\Framework\\": "src/framework",
+            "Cassandra\\Test\\": "tests/framework",
+            "Cassandra\\Annotation\\": "src/annotations/",
+            "Cassandra\\Aspect\\": "src/aspects/"
+        }
     }
 }

@@ -61,37 +61,9 @@ abstract class Mixable
     {
         $this->primeExpanders();
 
-        $combinators = self::getCombinatorsForClass($this);
-        if (!empty($combinators) && !empty($this->extending_class_instances))
-        {
-            $related_functions = array();
-            foreach ($combinators as $combinator)
-            {
-                if (method_exists($combinator::relatedInterface(), $method))
-                {
-                    foreach ($this->extending_class_instances as $extending_class_instance)
-                    {
-                        if (class_implements($extending_class_instance, $combinator::relatedInterface()))
-                        {
-                            $reflection = new \ReflectionClass(get_class($extending_class_instance));
-                            $closure = $reflection->getMethod($method)
-                                                  ->getClosure($extending_class_instance)
-                                                  ->bindTo($this);
-                            $related_functions[] = $closure;
-                        }
-                    }
-                    break;
-                }
-            }
-
-            if (!empty($related_functions))
-            {
-                $reflection = new \ReflectionClass($combinator);
-                $closure = $reflection->getMethod($method)
-                                      ->getClosure(new $combinator())
-                                      ->bindTo($this);
-                return $closure(null, $related_functions);
-            }
+        $combinator_return = self.__callCombinator($method, $args);
+        if (!is_null($combinator_return)) {
+            return $combinator_return;
         }
 
 
@@ -118,9 +90,58 @@ abstract class Mixable
         throw new \Error('Call to undefined method ' . static::class . '->' . $method . '()');
     }
 
-    private function getCombinator($method)
+    /**
+     * Call Combinator for a method if it exists.
+     * The first registered combinator that uses an interface with the method name will be the one called
+     *
+     * @param  string $method Method name we want check for combinator
+     * @param  array  $args   Arguments passed to method
+     * @return mixed          Return value of method
+     */
+    public function __callCombinator($method, $args)
     {
+        $related_functions = $this->getCombinatorFunctionsForMethod($method);
 
+        if (!empty($related_functions))
+        {
+            //$reflection = new \ReflectionClass($combinator);
+            // $closure = $reflection->getMethod($method)
+            //                       ->getClosure(new $combinator())
+            //                       ->bindTo($this);
+            //return $closure(null, $related_functions, $args);
+            $combinator = new $combinator();
+            return $combinator->$method(null, $related_functions, $args);
+        }
+
+    }
+
+    //
+    public function getCombinatorFunctionsForMethod($method) {
+        $related_functions = array();
+        $combinators = self::getCombinatorsForClass($this);
+        if (!empty($combinators) && !empty($this->extending_class_instances))
+        {
+            foreach ($combinators as $combinator)
+            {
+                if (method_exists($combinator::relatedInterface(), $method))
+                {
+                    foreach ($this->extending_class_instances as $extending_class_instance)
+                    {
+                        if (class_implements($extending_class_instance, $combinator::relatedInterface()))
+                        {
+                            $extending_class_name = get_class($extending_class_instance);
+                            $reflection = new \ReflectionClass($extending_class_name);
+                            $closure = $reflection->getMethod($method)
+                                                  ->getClosure($extending_class_instance)
+                                                  ->bindTo($this);
+                            $related_functions[$extending_class_name] = $closure;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        return $related_functions;
     }
 
     /**
