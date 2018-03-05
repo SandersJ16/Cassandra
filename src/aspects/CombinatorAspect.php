@@ -50,8 +50,10 @@ class CombinatorAspect implements Aspect
         $mixable = $invocation->getThis();
         if ($mixable instanceof Mixable) {
             $combinator_method = $invocation->getMethod()->getName();
-            $mixable->getCombinators
+            $combinator_closure = $invocation->getMethod()->getClosure($mixable);
+            $combinator_arguments = $invocation->getArguments();
 
+            return $mixable->callCombinator($combinator_method, $combinator_arguments, $combinator_closure);
         }
 
         return $mixable_method_value;

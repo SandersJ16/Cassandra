@@ -6,7 +6,7 @@
     "autoload": {
         "psr-4": {
             "Cassandra\\Framework\\": "src/framework",
-            "Cassandra\\Test\\": "tests/framework",
+            "Cassandra\\Test\\": ["tests", "tests/framework"],
             "Cassandra\\Annotation\\": "src/annotations/",
             "Cassandra\\Aspect\\": "src/aspects/"
         }
