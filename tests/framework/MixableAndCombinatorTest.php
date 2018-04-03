@@ -4,6 +4,7 @@ namespace Cassandra\Test;
 use Cassandra\Framework\Expander;
 use Cassandra\Framework\Combinator;
 use Cassandra\Framework\Mixable;
+use Cassandra\Annotations\Combinable;
 
 class TestCombinator extends CassandraTestCase
 {
@@ -15,14 +16,14 @@ class TestCombinator extends CassandraTestCase
         $this->assertEquals($expected_array, $mixable->properties());
     }
 
-    // public function testAddingCombinatorToMixableWithCombinatorFunction()
-    // {
-    //     $mixin = new TestMixableWithPropertyFunction();
+    public function testAddingCombinatorToMixableWithCombinatorFunction()
+    {
+        $mixin = new TestMixableWithPropertyFunction();
 
-    //     $expected_array = array('x' => array('dop_type', 'int'),
-    //                             'y' => array('dop_type', 'string'));
-    //     $this->assertArraysSimilar($expected_array, $mixin->properties());
-    // }
+        $expected_array = array('x' => array('dop_type', 'int'),
+                                'y' => array('dop_type', 'string'));
+        $this->assertArraysSimilar($expected_array, $mixin->properties());
+    }
 }
 
 class TestPropertyCombinatorClass extends Combinator
@@ -69,6 +70,10 @@ TestMixableWithNoPropertyFunction::registerExpander(__NAMESPACE__ . '\TestProper
 
 class TestMixableWithPropertyFunction extends Mixable implements TestCombinatorInterface
 {
+    /**
+     * @Combinable
+     * @return array
+     */
     public function properties() : array
     {
         return array('x' => array('dop_type' => 'int'));

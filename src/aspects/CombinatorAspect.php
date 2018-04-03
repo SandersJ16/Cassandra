@@ -17,24 +17,24 @@ use Go\Lang\Annotation\Pointcut;
 class CombinatorAspect implements Aspect
 {
 
-    /**
-     * Method that will be called before real method
-     *
-     * @param MethodInvocation $invocation Invocation
-     * @After("execution(public Test\Example->*(*))")
-     */
-    public function afterMethodExecution(MethodInvocation $invocation)
-    {
-        $obj = $invocation->getThis();
-        echo 'Calling Before Interceptor for method: ',
-        is_object($obj) ? get_class($obj) : $obj,
-        $invocation->getMethod()->isStatic() ? '::' : '->',
-        $invocation->getMethod()->getName(),
-        '()',
-        ' with arguments: ',
-        json_encode($invocation->getArguments()),
-        "<br>\n";
-    }
+    // /**
+    //  * Method that will be called before real method
+    //  *
+    //  * @param MethodInvocation $invocation Invocation
+    //  * @After("execution(public Test\Example->*(*))")
+    //  */
+    // public function afterMethodExecution(MethodInvocation $invocation)
+    // {
+    //     $obj = $invocation->getThis();
+    //     echo 'Calling Before Interceptor for method: ',
+    //     is_object($obj) ? get_class($obj) : $obj,
+    //     $invocation->getMethod()->isStatic() ? '::' : '->',
+    //     $invocation->getMethod()->getName(),
+    //     '()',
+    //     ' with arguments: ',
+    //     json_encode($invocation->getArguments()),
+    //     "<br>\n";
+    // }
 
     /**
      * Cacheable methods
@@ -46,7 +46,7 @@ class CombinatorAspect implements Aspect
     public function performCombinatorFunction(MethodInvocation $invocation)
     {
         $mixable_method_value = $invocation->proceed();
-
+        //throw new Exception('what at');
         $mixable = $invocation->getThis();
         if ($mixable instanceof Mixable) {
             $combinator_method = $invocation->getMethod()->getName();
@@ -57,7 +57,5 @@ class CombinatorAspect implements Aspect
         }
 
         return $mixable_method_value;
-
-
     }
 }

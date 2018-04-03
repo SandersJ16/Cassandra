@@ -6,7 +6,7 @@ use Cassandra\Aspect\CombinatorAspect;
 /**
  * Application Aspect Kernel
  */
-class AspectKernel extends Go\Core\AspectKernel
+class AspectKernel extends \Go\Core\AspectKernel
 {
     /**
      * Configure an AspectContainer with advisors, aspects and pointcuts

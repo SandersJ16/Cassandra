@@ -3,6 +3,14 @@ namespace Cassandra\Framework;
 
 
 //use Cassandra\Framework\CombinatorClassException;
+/**
+ * A unique identifier to indicate that no expander of combinator function was resolved.
+ * This is used so that combinators and expanders can return null and we can still tell
+ * when no combinator or expander exists. We use a unique ID an __DIR__ to make sure this
+ * string is different on every page load. This is so that functions can't exploit this
+ * to alter program flow.
+ */
+define('NO_FUNCTION_CALL', uniqid(__DIR__, true));
 
 abstract class Mixable
 {
@@ -61,23 +69,30 @@ abstract class Mixable
     {
         $this->primeExpanders();
 
-        $combinator = $this->getCombinatorForMethod($method);
-        if (!is_null($combinator)) {
-            $related_functions = $this->getCombinatorFunctions($combinator, $method);
-            if (!empty($related_functions))
-            {
-                //$reflection = new \ReflectionClass($combinator);
-                // $closure = $reflection->getMethod($method)
-                //                       ->getClosure(new $combinator())
-                //                       ->bindTo($this);
-                //return $closure(null, $related_functions, $args);
-                $combinator = new $combinator();
-                return $combinator->$method(null, $related_functions, $args);
-            }
+        $combinator_retval = $this->callCombinator($method, $args);
+        if ($combinator_retval !== NO_FUNCTION_CALL)
+        {
+            return $combinator_retval;
         }
 
+        $expander_retval = $this->callExpander($method, $args);
+        if ($expander_retval !== NO_FUNCTION_CALL)
+        {
+            return $expander_retval;
+        }
 
+        throw new \Error('Call to undefined method ' . static::class . '->' . $method . '()');
+    }
 
+    /**
+     * Check if this class has a registered expander with a method and call the method if it does
+     *
+     * @param  string       $method    Name of the method we want to check
+     * @param  array        $args      Arguments called on the method
+     * @return Mixed|NO_FUNCTION_CALL  Return value of the Expander method if it existed, otherwise NO_FUNCTION_CALL
+     */
+    public function callExpander($method, $args)
+    {
         if (!empty($this->extending_class_instances))
         {
             foreach ($this->extending_class_instances as $extending_class_instance)
@@ -97,27 +112,30 @@ abstract class Mixable
                 }
             }
         }
-        throw new \Error('Call to undefined method ' . static::class . '->' . $method . '()');
+        return NO_FUNCTION_CALL;
     }
 
-    public function callCombinator($method, $args, $mixable_combinator_closure = null) {
-        $this->primeExpanders();
-
+    /**
+     * Check if this class has a registered combinator for a method call and call the combinator if it does
+     *
+     * @param  string       $method                     Name of the method we want to check
+     * @param  array        $args                       Arguments called on the method
+     * @param  Closure|null $mixable_combinator_closure A closure of function `$method` if it exists on this Mixable, otherwise null
+     * @return Mixed|NO_FUNCTION_CALL                   Return value of function with combinator if it existed, otherwise NO_FUNCTION_CALL
+     */
+    public function callCombinator($method, $args,  $mixable_combinator_closure = null)
+    {
         $combinator = $this->getCombinatorForMethod($method);
         if (!is_null($combinator)) {
             $related_functions = $this->getCombinatorFunctions($combinator, $method);
 
-            if (!empty($related_functions))
+            if (!empty($related_functions) || !is_null($mixable_combinator_closure))
             {
-                //$reflection = new \ReflectionClass($combinator);
-                // $closure = $reflection->getMethod($method)
-                //                       ->getClosure(new $combinator())
-                //                       ->bindTo($this);
-                //return $closure(null, $related_functions, $args);
                 $combinator = new $combinator();
                 return $combinator->$method($mixable_combinator_closure, $related_functions, $args);
             }
         }
+        return NO_FUNCTION_CALL;
     }
 
     /**
