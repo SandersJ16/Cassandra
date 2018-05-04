@@ -6,6 +6,8 @@ use PHPUnit\Framework\TestCase;
 
 class CassandraTestCase extends TestCase
 {
+    protected $backupGlobalsBlacklist = array('applicationAspectKernel');
+
     public function assertArraysSimilar(array $expected, array $actual)
     {
         $this->assertCount(count($expected), $actual);

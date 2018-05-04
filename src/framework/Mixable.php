@@ -180,13 +180,13 @@ abstract class Mixable
     {
         $called_class = get_called_class();
         if (isset(self::$extending_classes[$called_class])) {
-            self::populateStaticClassVariables();
+            static::populateStaticClassVariables();
             foreach (self::$extending_classes[$called_class] as $extending_class)
             {
                 if (is_callable(array($extending_class, $method)))
                 {
                     $function_return_value = forward_static_call_array(array($extending_class, $method), $args);
-                    self::getStaticPropertyChangesFromExpander($extending_class);
+                    static::getStaticPropertyChangesFromExpander($extending_class);
                     return $function_return_value;
                 }
             }
@@ -251,7 +251,7 @@ abstract class Mixable
     {
         $this->buildLocalClasses();
         $this->populateLocalClassVariables();
-        self::populateStaticClassVariables();
+        static::populateStaticClassVariables();
     }
 
     /**
@@ -261,7 +261,7 @@ abstract class Mixable
      */
     private function buildLocalClasses()
     {
-        foreach (self::getClassAndAllExpandableParentsWithExpanders() as $expandable_class)
+        foreach (static::getClassAndAllExpandableParentsWithExpanders() as $expandable_class)
         {
             foreach (self::$extending_classes[$expandable_class] as $extending_class)
             {
@@ -358,7 +358,7 @@ abstract class Mixable
      */
     private static function populateStaticClassVariables()
     {
-        $static_variables = self::getStaticProperties();
+        $static_variables = static::getStaticProperties();
         $called_class = get_called_class();
         if (isset(self::$extending_classes[$called_class]))
         {

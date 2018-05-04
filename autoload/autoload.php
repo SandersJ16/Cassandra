@@ -13,10 +13,6 @@ $applicationAspectKernel->init(array(
         // Cache directory
         'cacheDir' => __DIR__ . '/../cache/',
         // Include paths restricts the directories where aspects should be applied, or empty for all source files
-        'includePaths' => array(
-            //__DIR__ . '/../src/'
-        )
+        'includePaths' => array(__DIR__ . '/../src/',
+                                __DIR__ . '/../tests/')
 ));
-
-
-

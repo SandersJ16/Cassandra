@@ -1,6 +1,6 @@
 <?php
 
-namespace Annotation;
+namespace Cassandra\Annotation;
 
 use Doctrine\Common\Annotations\Annotation;
 

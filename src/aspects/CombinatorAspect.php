@@ -41,7 +41,7 @@ class CombinatorAspect implements Aspect
      *
      * @param MethodInvocation $invocation Invocation
      *
-     * @Around("@execution(Annotation\Combinable)")
+     * @Around("@execution(Cassandra\Annotation\Combinable)")
      */
     public function performCombinatorFunction(MethodInvocation $invocation)
     {
